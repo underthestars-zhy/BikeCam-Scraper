@@ -6,7 +6,11 @@
     "dev": "bun run --watch src/index.ts"
   },
   "dependencies": {
-    "elysia": "latest"
+    "async-mutex": "^0.5.0",
+    "axios": "^1.7.7",
+    "elysia": "latest",
+    "install": "^0.13.0",
+    "puppeteer": "^23.8.0"
   },
   "devDependencies": {
     "bun-types": "latest"
