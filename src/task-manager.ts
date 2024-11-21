@@ -57,15 +57,8 @@ export class TaskManager {
 
         if (currentReal.length >= 15) {
             console.log('started predict')
-            let currentPredicted = await DataManager.getInstance().getPredictedData()
             const predictionResponse = await axios.post('http://127.0.0.1:9901/predict', currentReal)
-            const newPrecited: MapTable = {
-                time: currentTime + 60 * 1000,
-                bikes: predictionResponse.data
-            }
-            currentPredicted.push(newPrecited)
-            if (currentPredicted.length > 120) { currentPredicted.shift() }
-            await DataManager.getInstance().setPredictedData(currentPredicted)
+            await DataManager.getInstance().setPredictedData(predictionResponse.data)
         }
     }
 }
