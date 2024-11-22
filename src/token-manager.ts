@@ -48,27 +48,32 @@ export class TokenManager {
             ],
         });
 
-        const context = browser.defaultBrowserContext();
-        const page = (await context.pages())[0]
+        try {
+            const context = browser.defaultBrowserContext();
+            const page = (await context.pages())[0]
 
-        await page.setViewport({
-            width: 1920 + Math.floor(Math.random() * 100),
-            height: 3000 + Math.floor(Math.random() * 100),
-            deviceScaleFactor: 1,
-            hasTouch: false,
-            isLandscape: false,
-            isMobile: false,
-        });
+            await page.setViewport({
+                width: 1920 + Math.floor(Math.random() * 100),
+                height: 3000 + Math.floor(Math.random() * 100),
+                deviceScaleFactor: 1,
+                hasTouch: false,
+                isLandscape: false,
+                isMobile: false,
+            });
 
-        await page.setUserAgent(
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36"
-        )
+            await page.setUserAgent(
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36"
+            )
 
-        await page.goto('https://account.bluebikes.com/map');
+            await page.goto('https://account.bluebikes.com/map');
 
-        await page.waitForNetworkIdle()
+            await page.waitForNetworkIdle()
 
-        this.sessID = (await page.cookies()).find(c => c.name == 'sessId')?.value ?? ''
+            this.sessID = (await page.cookies()).find(c => c.name == 'sessId')?.value ?? ''
+        } catch (e) {
+            const errorTime = new Date().toISOString();
+            console.error(`Error occurred at ${errorTime}:`, e);
+        }
 
         await browser.close()
     }
