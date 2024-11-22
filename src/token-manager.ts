@@ -1,5 +1,6 @@
 import puppeteer from "puppeteer";
 import { TaskManager } from "./task-manager";
+import UserAgent from 'user-agents';
 
 export class TokenManager {
     private static instance: TokenManager;
