@@ -62,9 +62,11 @@ export class TokenManager {
                 isMobile: false,
             });
 
-            await page.setUserAgent(
-                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36"
-            )
+            const userAgent = new UserAgent({ platform: 'MacIntel', deviceCategory: 'desktop' });
+            const userAgentStr = userAgent.toString() ?? "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36"
+            console.log(`User Agent: ${userAgentStr}`);
+
+            await page.setUserAgent(userAgentStr)
 
             await page.goto('https://account.bluebikes.com/map');
 

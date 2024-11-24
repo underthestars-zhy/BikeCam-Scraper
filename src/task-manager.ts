@@ -2,6 +2,12 @@ import axios from "axios";
 import {TokenManager} from "./token-manager";
 import * as fs from 'fs';
 import {DataManager} from "./data-manager";
+import axiosRetry from "axios-retry";
+
+axiosRetry(axios, {
+    retries: 3, // Number of retry attempts
+    retryDelay: axiosRetry.exponentialDelay,
+})
 
 export class TaskManager {
     private static instance: TaskManager;
@@ -50,7 +56,9 @@ export class TaskManager {
 
         let currentReal: MapTable[] = await DataManager.getInstance().getRealData()
         currentReal.push(mapEntry)
-        if (currentReal.length > 15) { currentReal.shift() }
+        if (currentReal.length > 15) {
+            currentReal.shift()
+        }
         await DataManager.getInstance().setRealData(currentReal)
 
         console.log('save real data')
