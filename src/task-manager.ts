@@ -31,13 +31,9 @@ export class TaskManager {
     }
 
     private async requestMapData() {
-        axiosRetry(axios, {
-            retries: 3, // Number of retry attempts
-            retryDelay: axiosRetry.exponentialDelay,
-        })
         
         try {
-            const response = await axios.post('https://account.bluebikes.com/bikesharefe-gql', {
+            const response = await client.post('https://account.bluebikes.com/bikesharefe-gql', {
                     "query": "query GetSystemSupply($input: SupplyInput) {\n  supply(input: $input) {\n    stations {\n      stationId\n      stationName\n      location {\n        lat\n        lng\n        __typename\n      }\n      bikesAvailable\n      bikeDocksAvailable\n      ebikesAvailable\n      scootersAvailable\n      totalBikesAvailable\n      totalRideablesAvailable\n      isValet\n      isOffline\n      isLightweight\n      notices {\n        ...NoticeFields\n        __typename\n      }\n      siteId\n      ebikes {\n        batteryStatus {\n          distanceRemaining {\n            value\n            unit\n            __typename\n          }\n          percent\n          __typename\n        }\n        __typename\n      }\n      scooters {\n        batteryStatus {\n          distanceRemaining {\n            value\n            unit\n            __typename\n          }\n          percent\n          __typename\n        }\n        __typename\n      }\n      lastUpdatedMs\n      __typename\n    }\n    rideables {\n      rideableId\n      location {\n        lat\n        lng\n        __typename\n      }\n      rideableType\n      batteryStatus {\n        distanceRemaining {\n          value\n          unit\n          __typename\n        }\n        percent\n        __typename\n      }\n      __typename\n    }\n    notices {\n      ...NoticeFields\n      __typename\n    }\n    requestErrors {\n      ...NoticeFields\n      __typename\n    }\n    __typename\n  }\n}\n\nfragment NoticeFields on Notice {\n  localizedTitle\n  localizedDescription\n  url\n  __typename\n}",
                     "variables": {
                         "input": {
