@@ -4,6 +4,17 @@ import * as fs from 'fs';
 import {DataManager} from "./data-manager";
 import axiosRetry from "axios-retry";
 
+const client = axios.create();
+
+axiosRetry(client, {
+  retries: 3,
+  retryDelay: axiosRetry.exponentialDelay,
+  retryCondition: (error) => {
+    // Retry on any error
+    return true;
+  }
+});
+
 export class TaskManager {
     private static instance: TaskManager;
 
@@ -25,48 +36,52 @@ export class TaskManager {
             retryDelay: axiosRetry.exponentialDelay,
         })
         
-        const response = await axios.post('https://account.bluebikes.com/bikesharefe-gql', {
-            "query": "query GetSystemSupply($input: SupplyInput) {\n  supply(input: $input) {\n    stations {\n      stationId\n      stationName\n      location {\n        lat\n        lng\n        __typename\n      }\n      bikesAvailable\n      bikeDocksAvailable\n      ebikesAvailable\n      scootersAvailable\n      totalBikesAvailable\n      totalRideablesAvailable\n      isValet\n      isOffline\n      isLightweight\n      notices {\n        ...NoticeFields\n        __typename\n      }\n      siteId\n      ebikes {\n        batteryStatus {\n          distanceRemaining {\n            value\n            unit\n            __typename\n          }\n          percent\n          __typename\n        }\n        __typename\n      }\n      scooters {\n        batteryStatus {\n          distanceRemaining {\n            value\n            unit\n            __typename\n          }\n          percent\n          __typename\n        }\n        __typename\n      }\n      lastUpdatedMs\n      __typename\n    }\n    rideables {\n      rideableId\n      location {\n        lat\n        lng\n        __typename\n      }\n      rideableType\n      batteryStatus {\n        distanceRemaining {\n          value\n          unit\n          __typename\n        }\n        percent\n        __typename\n      }\n      __typename\n    }\n    notices {\n      ...NoticeFields\n      __typename\n    }\n    requestErrors {\n      ...NoticeFields\n      __typename\n    }\n    __typename\n  }\n}\n\nfragment NoticeFields on Notice {\n  localizedTitle\n  localizedDescription\n  url\n  __typename\n}",
-            "variables": {
-                "input": {
-                    "regionCode": "BOS",
-                    "rideablePageLimit": 1000
+        try {
+            const response = await axios.post('https://account.bluebikes.com/bikesharefe-gql', {
+                    "query": "query GetSystemSupply($input: SupplyInput) {\n  supply(input: $input) {\n    stations {\n      stationId\n      stationName\n      location {\n        lat\n        lng\n        __typename\n      }\n      bikesAvailable\n      bikeDocksAvailable\n      ebikesAvailable\n      scootersAvailable\n      totalBikesAvailable\n      totalRideablesAvailable\n      isValet\n      isOffline\n      isLightweight\n      notices {\n        ...NoticeFields\n        __typename\n      }\n      siteId\n      ebikes {\n        batteryStatus {\n          distanceRemaining {\n            value\n            unit\n            __typename\n          }\n          percent\n          __typename\n        }\n        __typename\n      }\n      scooters {\n        batteryStatus {\n          distanceRemaining {\n            value\n            unit\n            __typename\n          }\n          percent\n          __typename\n        }\n        __typename\n      }\n      lastUpdatedMs\n      __typename\n    }\n    rideables {\n      rideableId\n      location {\n        lat\n        lng\n        __typename\n      }\n      rideableType\n      batteryStatus {\n        distanceRemaining {\n          value\n          unit\n          __typename\n        }\n        percent\n        __typename\n      }\n      __typename\n    }\n    notices {\n      ...NoticeFields\n      __typename\n    }\n    requestErrors {\n      ...NoticeFields\n      __typename\n    }\n    __typename\n  }\n}\n\nfragment NoticeFields on Notice {\n  localizedTitle\n  localizedDescription\n  url\n  __typename\n}",
+                    "variables": {
+                        "input": {
+                            "regionCode": "BOS",
+                            "rideablePageLimit": 1000
+                        }
+                    },
+                    "operationName": "GetSystemSupply"
+                }, {
+                    "headers": TokenManager.getInstance().generateHeader()
+                })
+
+                const currentTime = new Date().getTime()
+
+                const mapEntry: MapTable = {
+                    time: currentTime,
+                    bikes: response.data['data']['supply']['stations'].map((s: any) => ({
+                        location: {
+                            lat: s['location']['lat'],
+                            lng: s['location']['lng']
+                        },
+                        count: s['totalRideablesAvailable'],
+                    }))
                 }
-            },
-            "operationName": "GetSystemSupply"
-        }, {
-            "headers": TokenManager.getInstance().generateHeader()
-        })
 
-        const currentTime = new Date().getTime()
+                const filePath = `./data/${currentTime}.json`;
+                fs.writeFileSync(filePath, JSON.stringify(mapEntry, null, 2));
 
-        const mapEntry: MapTable = {
-            time: currentTime,
-            bikes: response.data['data']['supply']['stations'].map((s: any) => ({
-                location: {
-                    lat: s['location']['lat'],
-                    lng: s['location']['lng']
-                },
-                count: s['totalRideablesAvailable'],
-            }))
-        }
+                let currentReal: MapTable[] = await DataManager.getInstance().getRealData()
+                currentReal.push(mapEntry)
+                if (currentReal.length > 15) {
+                    currentReal.shift()
+                }
+                await DataManager.getInstance().setRealData(currentReal)
 
-        const filePath = `./data/${currentTime}.json`;
-        fs.writeFileSync(filePath, JSON.stringify(mapEntry, null, 2));
+                console.log('save real data')
 
-        let currentReal: MapTable[] = await DataManager.getInstance().getRealData()
-        currentReal.push(mapEntry)
-        if (currentReal.length > 15) {
-            currentReal.shift()
-        }
-        await DataManager.getInstance().setRealData(currentReal)
-
-        console.log('save real data')
-
-        if (currentReal.length >= 15) {
-            console.log('started predict')
-            const predictionResponse = await axios.post('http://127.0.0.1:9901/predict', currentReal)
-            await DataManager.getInstance().setPredictedData(predictionResponse.data)
+                if (currentReal.length >= 15) {
+                    console.log('started predict')
+                    const predictionResponse = await axios.post('http://127.0.0.1:9901/predict', currentReal)
+                    await DataManager.getInstance().setPredictedData(predictionResponse.data)
+                }
+        } catch (e) {
+            console.log('Axios Error:', e)
         }
     }
 }
