@@ -13,7 +13,7 @@ export function isNearBy(point1: GeoPoint, point2: GeoPoint): boolean {
     // Earth's radius in kilometers
     const EARTH_RADIUS = 6371;
     // Maximum distance in kilometers
-    const MAX_DISTANCE = 0.5;
+    const MAX_DISTANCE = 0.3;
 
     // Convert latitude and longitude from degrees to radians
     const lat1 = toRadians(point1.lat);
